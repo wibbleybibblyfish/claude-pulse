@@ -55,6 +55,68 @@ async fn handle_quit(State(state): State<AppState>) -> StatusCode {
     StatusCode::OK
 }
 
+#[derive(serde::Deserialize)]
+struct RendererRequest {
+    #[serde(rename = "type")]
+    renderer_type: String,
+}
+
+#[derive(serde::Serialize)]
+struct ConfigResponse {
+    renderer: String,
+}
+
+async fn handle_renderer(
+    State(state): State<AppState>,
+    Json(req): Json<RendererRequest>,
+) -> StatusCode {
+    let renderer = req.renderer_type;
+    if renderer != "orb" && renderer != "pixel-character" {
+        return StatusCode::BAD_REQUEST;
+    }
+    write_renderer_preference(&renderer);
+    let _ = state.app_handle.emit("renderer-change", &renderer);
+    StatusCode::OK
+}
+
+async fn handle_config() -> Json<ConfigResponse> {
+    Json(ConfigResponse {
+        renderer: read_renderer_preference(),
+    })
+}
+
+fn config_file_path() -> std::path::PathBuf {
+    dirs::home_dir()
+        .unwrap_or_default()
+        .join(".claude")
+        .join("pulse-config.json")
+}
+
+fn read_renderer_preference() -> String {
+    let path = config_file_path();
+    if let Ok(contents) = std::fs::read_to_string(&path) {
+        if let Ok(config) = serde_json::from_str::<serde_json::Value>(&contents) {
+            if let Some(renderer) = config.get("renderer").and_then(|v| v.as_str()) {
+                return renderer.to_string();
+            }
+        }
+    }
+    "orb".to_string()
+}
+
+fn write_renderer_preference(renderer: &str) {
+    let path = config_file_path();
+    let mut config = if let Ok(contents) = std::fs::read_to_string(&path) {
+        serde_json::from_str::<serde_json::Value>(&contents).unwrap_or(serde_json::json!({}))
+    } else {
+        serde_json::json!({})
+    };
+    config["renderer"] = serde_json::json!(renderer);
+    if let Ok(json) = serde_json::to_string_pretty(&config) {
+        let _ = std::fs::write(path, json);
+    }
+}
+
 fn state_file_path() -> std::path::PathBuf {
     dirs::home_dir()
         .unwrap_or_default()
@@ -104,6 +166,8 @@ pub fn start_server(app_handle: AppHandle, pulse_state: SharedState, port: u16) 
             .route("/health", get(handle_health))
             .route("/control/visibility", post(handle_visibility))
             .route("/control/quit", post(handle_quit))
+            .route("/control/renderer", post(handle_renderer))
+            .route("/config", get(handle_config))
             .with_state(state);
 
         let addr = format!("127.0.0.1:{}", port);

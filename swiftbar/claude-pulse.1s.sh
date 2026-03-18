@@ -64,6 +64,21 @@ if [ -n "$TOOL" ]; then
     fi
 fi
 [ "$TOOL_RATE" -gt 0 ] 2>/dev/null && echo "Tool Rate: ${TOOL_RATE}/min"
+# Read current renderer preference from config
+CONFIG_FILE="$HOME/.claude/pulse-config.json"
+RENDERER=$(jq -r '.renderer // "orb"' "$CONFIG_FILE" 2>/dev/null)
+RENDERER="${RENDERER:-orb}"
+
+if [ "$RENDERER" = "orb" ]; then
+    ORB_CHECK="✓ "; PIXEL_CHECK=""
+else
+    ORB_CHECK=""; PIXEL_CHECK="✓ "
+fi
+
+echo "---"
+echo "Renderer"
+echo "--${ORB_CHECK}Orb | bash='curl -sX POST http://localhost:3200/control/renderer -H \"Content-Type: application/json\" -d \"{\\\"type\\\":\\\"orb\\\"}\"' terminal=false refresh=true"
+echo "--${PIXEL_CHECK}Pixel Dev | bash='curl -sX POST http://localhost:3200/control/renderer -H \"Content-Type: application/json\" -d \"{\\\"type\\\":\\\"pixel-character\\\"}\"' terminal=false refresh=true"
 echo "---"
 echo "Show/Hide Widget | bash=$DIR/pulse-toggle.sh terminal=false"
 echo "---"

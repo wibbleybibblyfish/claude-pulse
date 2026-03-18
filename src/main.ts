@@ -20,7 +20,7 @@ listen<PulseState>('pulse-state', (event) => {
     renderer.updateState(event.payload);
 });
 
-// Enable window dragging — listen on document to avoid canvas event issues
+// Enable window dragging
 const appWindow = getCurrentWindow();
 document.addEventListener('mousedown', (e) => {
     if (e.button === 0) {

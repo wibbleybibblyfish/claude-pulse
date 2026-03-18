@@ -15,8 +15,8 @@
       {
         "label": "pulse",
         "title": "Claude Pulse",
-        "width": 200,
-        "height": 200,
+        "width": 280,
+        "height": 280,
         "resizable": true,
         "fullscreen": false,
         "decorations": false,

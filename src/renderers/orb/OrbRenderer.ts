@@ -99,9 +99,9 @@ export class OrbRenderer implements PulseRenderer {
         const visuals = STATE_VISUALS[state.state];
         this.targetColor = [...visuals.color];
 
-        // Agents boost glow, capped at 5 agents worth
-        const agentGlowBoost = Math.min(this.activeAgents * 12, 60);
-        this.targetGlow = visuals.glowSize + (state.intensity * 20) + agentGlowBoost;
+        // Agents boost glow, capped so it fades before window edge
+        const agentGlowBoost = Math.min(this.activeAgents * 8, 30);
+        this.targetGlow = Math.min(visuals.glowSize + (state.intensity * 15) + agentGlowBoost, 55);
 
         // Agents boost particle count, capped at 5 agents worth
         const agentParticleBoost = Math.min(this.activeAgents * 15, 75);

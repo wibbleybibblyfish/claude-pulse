@@ -77,8 +77,8 @@ fi
 
 echo "---"
 echo "Renderer"
-echo "--${ORB_CHECK}Orb | bash='curl -sX POST http://localhost:3200/control/renderer -H \"Content-Type: application/json\" -d \"{\\\"type\\\":\\\"orb\\\"}\"' terminal=false refresh=true"
-echo "--${PIXEL_CHECK}Pixel Dev | bash='curl -sX POST http://localhost:3200/control/renderer -H \"Content-Type: application/json\" -d \"{\\\"type\\\":\\\"pixel-character\\\"}\"' terminal=false refresh=true"
+echo "--${ORB_CHECK}Orb | bash=$DIR/pulse-renderer.sh param1=orb terminal=false refresh=true"
+echo "--${PIXEL_CHECK}Pixel Dev | bash=$DIR/pulse-renderer.sh param1=pixel-character terminal=false refresh=true"
 echo "---"
 echo "Show/Hide Widget | bash=$DIR/pulse-toggle.sh terminal=false"
 echo "---"

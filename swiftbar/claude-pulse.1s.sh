@@ -47,6 +47,7 @@ case "$STATE" in
     working)  ICON="🟢"; LABEL="Working" ;;
     spawning) ICON="🟠"; LABEL="Spawning" ;;
     error)    ICON="🔴"; LABEL="Error" ;;
+    waiting)  ICON="🟡"; LABEL="Waiting" ;;
     *)        ICON="⚫"; LABEL="Unknown" ;;
 esac
 

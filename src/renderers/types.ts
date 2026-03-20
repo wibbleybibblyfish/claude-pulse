@@ -1,4 +1,4 @@
-export type PulseStateName = 'idle' | 'thinking' | 'working' | 'spawning' | 'error';
+export type PulseStateName = 'idle' | 'thinking' | 'working' | 'spawning' | 'error' | 'waiting';
 
 export interface PulseState {
     state: PulseStateName;

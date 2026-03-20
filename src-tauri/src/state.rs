@@ -13,6 +13,7 @@ pub enum PulseState {
     Working,
     Spawning,
     Error,
+    Waiting,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -94,6 +95,9 @@ impl StateMachine {
                 self.active_agents = 0;
                 self.active_tools = 0;
                 self.session_started_at = None;
+            }
+            "Notification" => {
+                self.state = PulseState::Waiting;
             }
             "UserPromptSubmit" => {
                 self.state = PulseState::Thinking;

@@ -33,7 +33,7 @@ interface Particle {
     life: number;
     maxLife: number;
     color: string;
-    type: 'zzz' | 'steam' | 'spark' | 'paper' | 'sweat';
+    type: 'zzz' | 'steam' | 'spark' | 'paper' | 'sweat' | 'question';
     text?: string;
 }
 
@@ -54,6 +54,7 @@ export class PixelCharacterRenderer implements PulseRenderer {
     private steamTimer: number = 0;
     private sparkTimer: number = 0;
     private sweatTimer: number = 0;
+    private questionTimer: number = 0;
     private previousState: PulseStateName = 'idle';
     private shakeOffsetX: number = 0;
     private shakeOffsetY: number = 0;
@@ -87,6 +88,8 @@ export class PixelCharacterRenderer implements PulseRenderer {
                 this.particles = this.particles.filter(p => p.type !== 'steam' && p.type !== 'spark');
             if (prevState === 'spawning' && this.currentState !== 'working')
                 this.particles = this.particles.filter(p => p.type !== 'steam' && p.type !== 'spark' && p.type !== 'sweat');
+            if (prevState === 'waiting')
+                this.particles = this.particles.filter(p => p.type !== 'question');
 
             // Burst papers on error state entry
             if (this.currentState === 'error' && prevState !== 'error') {
@@ -178,6 +181,8 @@ export class PixelCharacterRenderer implements PulseRenderer {
                 return [13, 26, 13];     // #0d1a0d
             case 'spawning':
                 return [26, 21, 8];      // #1a1508
+            case 'waiting':
+                return [40, 30, 8];      // #281e08
             case 'error':
                 return [42, 8, 8];       // #2a0808
         }
@@ -282,6 +287,22 @@ export class PixelCharacterRenderer implements PulseRenderer {
                     this.rect(dividers[0] + 1, sy + 4, dividers[1] - 1, sy + 4);
                     this.rect(dividers[1] + 1, sy + 2, sx + sw - 2, sy + 2);
                 }
+                break;
+            }
+            case 'waiting': {
+                // Amber "?" centered on screen
+                const cx = sx + 5;
+                this.ctx.fillStyle = '#ffcc33';
+                // Top curve of ?
+                this.rect(cx, sy + 1, cx + 1, sy + 1);
+                this.px(cx + 2, sy + 2);
+                this.px(cx + 2, sy + 3);
+                this.px(cx + 1, sy + 4);
+                // Stem
+                this.px(cx, sy + 5);
+                this.px(cx, sy + 6);
+                // Dot
+                this.px(cx, sy + 8);
                 break;
             }
             case 'error': {
@@ -448,6 +469,53 @@ export class PixelCharacterRenderer implements PulseRenderer {
         this.drawPoseWorking(armOffset);
     }
 
+    private drawPoseWaiting(): void {
+        const bx = 9;
+        const by = 13;
+
+        // Head - turned toward viewer (facing left), eyebrow raised
+        this.ctx.fillStyle = COLORS.hair;
+        this.rect(bx, by - 1, bx + 5, by);
+        this.px(bx + 5, by + 1);
+        this.px(bx + 5, by + 2);
+        // Face
+        this.ctx.fillStyle = COLORS.skin;
+        this.rect(bx, by + 1, bx + 4, by + 5);
+        // Eyes - looking left at viewer
+        this.ctx.fillStyle = COLORS.eyeWhite;
+        this.px(bx + 1, by + 2);
+        this.px(bx + 2, by + 2);
+        this.ctx.fillStyle = COLORS.eyePupil;
+        this.px(bx + 1, by + 2);
+        // Mouth - slight smile
+        this.ctx.fillStyle = COLORS.mouth;
+        this.px(bx + 2, by + 4);
+
+        // Body - turned slightly in chair
+        this.ctx.fillStyle = COLORS.shirt;
+        this.rect(bx, by + 6, bx + 4, by + 11);
+        this.ctx.fillStyle = COLORS.shirtHighlight;
+        this.px(bx + 1, by + 7);
+        this.px(bx + 2, by + 7);
+
+        // Left arm raised waving - animated bob
+        const waveOffset = Math.round(Math.sin(this.time / 400) * 0.8);
+        this.ctx.fillStyle = COLORS.skin;
+        this.px(bx - 1, by + 7);
+        this.px(bx - 2, by + 6);
+        this.px(bx - 2, by + 5 + waveOffset);
+        this.px(bx - 3, by + 4 + waveOffset);
+
+        // Right arm on chair armrest
+        this.ctx.fillStyle = COLORS.skin;
+        this.rect(bx + 5, by + 9, bx + 6, by + 10);
+
+        // Legs
+        this.ctx.fillStyle = COLORS.shirt;
+        this.rect(bx, by + 12, bx + 1, by + 14);
+        this.rect(bx + 2, by + 12, bx + 3, by + 14);
+    }
+
     private drawPoseError(): void {
         const bx = 7;
         const by = 12;
@@ -551,6 +619,9 @@ export class PixelCharacterRenderer implements PulseRenderer {
                 this.drawAgentBots();
                 this.drawPoseSpawning(this.getTypingFrame());
                 break;
+            case 'waiting':
+                this.drawPoseWaiting();
+                break;
             case 'error':
                 this.drawPoseError();
                 break;
@@ -636,6 +707,24 @@ export class PixelCharacterRenderer implements PulseRenderer {
         });
     }
 
+    private spawnQuestion(): void {
+        const aliveCount = this.particles.filter(p => p.type === 'question').length;
+        if (aliveCount >= 1)
+            return;
+
+        this.particles.push({
+            x: 5 + Math.random() * 2,
+            y: 8,
+            vx: 0,
+            vy: -(1 + Math.random() * 0.5),
+            life: 0,
+            maxLife: 2000,
+            color: '#ffcc33',
+            type: 'question',
+            text: '?',
+        });
+    }
+
     private updateParticles(dt: number): void {
         for (const p of this.particles) {
             p.life += dt;
@@ -645,7 +734,7 @@ export class PixelCharacterRenderer implements PulseRenderer {
             if (p.type === 'paper' || p.type === 'sweat')
                 p.vy += 15 * dt / 1000;
 
-            if (p.type === 'steam' || p.type === 'zzz')
+            if (p.type === 'steam' || p.type === 'zzz' || p.type === 'question')
                 p.x += Math.sin(p.life / 300) * 0.02;
         }
 
@@ -667,6 +756,13 @@ export class PixelCharacterRenderer implements PulseRenderer {
                 this.px(gx, gy + 2);
                 this.px(gx + 1, gy + 2);
                 this.px(gx + 2, gy + 2);
+            } else if (p.type === 'question') {
+                // Draw "?" as a 3x5 pixel pattern
+                this.px(gx, gy);
+                this.px(gx + 1, gy);
+                this.px(gx + 2, gy + 1);
+                this.px(gx + 1, gy + 2);
+                this.px(gx + 1, gy + 4);
             } else if (p.type === 'paper') {
                 this.px(gx, gy);
                 this.px(gx + 1, gy);
@@ -711,12 +807,20 @@ export class PixelCharacterRenderer implements PulseRenderer {
                 }
                 break;
             }
+            case 'waiting':
+                this.questionTimer += dt;
+                if (this.questionTimer >= 1200) {
+                    this.questionTimer = 0;
+                    this.spawnQuestion();
+                }
+                break;
             default:
                 // Reset spawn timers for inactive states
                 this.zzzTimer = 0;
                 this.steamTimer = 0;
                 this.sparkTimer = 0;
                 this.sweatTimer = 0;
+                this.questionTimer = 0;
                 break;
         }
     }

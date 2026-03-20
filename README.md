@@ -2,7 +2,7 @@
 
 An ambient desktop presence widget for [Claude Code](https://claude.ai/code). A floating orb that reacts to Claude's activity in real-time — changing colour, particle intensity, and size based on what Claude is doing.
 
-![idle](https://img.shields.io/badge/idle-blue-6496FF) ![thinking](https://img.shields.io/badge/thinking-purple-B464FF) ![working](https://img.shields.io/badge/working-green-50DC78) ![spawning](https://img.shields.io/badge/spawning-orange-FFB432) ![error](https://img.shields.io/badge/error-red-FF3C3C)
+![idle](https://img.shields.io/badge/idle-blue-6496FF) ![thinking](https://img.shields.io/badge/thinking-purple-B464FF) ![working](https://img.shields.io/badge/working-green-50DC78) ![spawning](https://img.shields.io/badge/spawning-orange-FFB432) ![waiting](https://img.shields.io/badge/waiting-amber-FFC83C) ![error](https://img.shields.io/badge/error-red-FF3C3C)
 
 ## How it works
 
@@ -21,6 +21,7 @@ Claude Code → hooks → HTTP POST localhost:3200 → Tauri app → orb visual
 | Thinking | Purple | User prompt submitted |
 | Working | Green | Tool calls in progress |
 | Spawning | Orange | Sub-agents active (orb grows with agent count) |
+| Waiting | Amber | Permission prompt — Claude needs user input |
 | Error | Red | Tool failure (5s flash) |
 
 ## Prerequisites
@@ -58,7 +59,8 @@ Add to `~/.claude/settings.json`:
     "UserPromptSubmit": [{ "hooks": [{ "type": "command", "command": "~/tools/claude-pulse/swiftbar/pulse-hook.sh" }] }],
     "Stop": [{ "hooks": [{ "type": "command", "command": "~/tools/claude-pulse/swiftbar/pulse-hook.sh" }] }],
     "SessionStart": [{ "hooks": [{ "type": "command", "command": "~/tools/claude-pulse/swiftbar/pulse-hook.sh" }] }],
-    "SessionEnd": [{ "hooks": [{ "type": "command", "command": "~/tools/claude-pulse/swiftbar/pulse-hook.sh" }] }]
+    "SessionEnd": [{ "hooks": [{ "type": "command", "command": "~/tools/claude-pulse/swiftbar/pulse-hook.sh" }] }],
+    "Notification": [{ "matcher": "permission_prompt", "hooks": [{ "type": "command", "command": "~/tools/claude-pulse/swiftbar/pulse-hook.sh" }] }]
   }
 }
 ```
@@ -85,7 +87,7 @@ Or add to System Settings → General → Login Items for auto-start on boot.
 
 - **Tauri app** (Rust + web frontend) — single process running the HTTP server and rendering the orb
 - **Axum HTTP server** on port 3200 — receives hook events, maintains state machine
-- **Canvas 2D renderer** — pluggable interface, ships with the orb renderer
+- **Canvas 2D renderers** — pluggable interface, ships with orb and pixel-character renderers (switchable at runtime)
 - **SwiftBar plugin** — reads `~/.claude/pulse-state.json` for menubar indicator
 
 ## Endpoints
@@ -96,7 +98,9 @@ Or add to System Settings → General → Login Items for auto-start on boot.
 | `/status` | GET | Returns current state as JSON |
 | `/health` | GET | Liveness check |
 | `/control/visibility` | POST | Toggle widget show/hide |
+| `/control/renderer` | POST | Switch renderer (`{"type":"orb"}` or `{"type":"pixel-character"}`) |
 | `/control/quit` | POST | Graceful shutdown |
+| `/config` | GET | Returns current renderer preference |
 
 ## License
 

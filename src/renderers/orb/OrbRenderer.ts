@@ -55,6 +55,13 @@ const STATE_VISUALS: Record<PulseStateName, StateVisuals> = {
         baseSpeed: 2.0,
         glowSize: 40,
     },
+    waiting: {
+        color: [255, 200, 60],
+        glowColor: 'rgba(255, 200, 60, 0.5)',
+        baseParticles: 20,
+        baseSpeed: 0.4,
+        glowSize: 35,
+    },
 };
 
 export class OrbRenderer implements PulseRenderer {
@@ -183,6 +190,11 @@ export class OrbRenderer implements PulseRenderer {
         let glitchOffset = 0;
         if (this.currentState === 'error') {
             glitchOffset = (Math.random() - 0.5) * 4;
+        }
+
+        // Waiting: continuous breathing pulse
+        if (this.currentState === 'waiting') {
+            this.pulseAmount = Math.sin(this.time * 0.04) * 6;
         }
 
         // Draw outer glow
